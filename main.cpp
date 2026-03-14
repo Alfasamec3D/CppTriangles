@@ -1,6 +1,5 @@
 #include "geom.hpp"
-int main()
-{
-	final();
-	return 1;
+int main() {
+  final();
+  return 1;
 }
