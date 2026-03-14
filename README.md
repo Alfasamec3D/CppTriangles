@@ -1,12 +1,13 @@
-# Polygon's intersection detection
+# CppTriangles
 
-As you could alredy understand, this program accepts a list of triangles and then prints indexes of the intersecting ones.
+This program searches intersecting triangles
 
 ## How to build
 
-1. Copy the repository
-2. Go to the source tree directory (the one containing `CMakeLists.txt` file, `/Triangles_intersec-main/triangle`)
-3. Generate a project buildsystem, then build the project through terminal. On linux just use
+1. Before building on youy system must be installed Boost C++ libraries headers. To install on Linux use `sudo apt install libboost-dev` 
+2. Copy the repository
+3. Go to the source tree directory (the one containing `CMakeLists.txt` file)
+4. Generate a project buildsystem, then build the project through terminal. On linux just use
 
    `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build ./build`
 
@@ -16,11 +17,10 @@ As you could alredy understand, this program accepts a list of triangles and the
 
 ## How to test
 
-1. Go to the build tree directory (`/Triangles_intersec-main/triangle/build`)
-2. In terminal use `make test` command.
-3. See the results of the test.
+1. In terminal use `ctest --test-dir build/tests` command.
+2. See the results of the test.
 
-## How to launch
+## How to run
 
-1. In the same directory enter `./main` command.
+1. In the same directory use `build/main`.
 2. Enjoy the program.

@@ -1,10 +1,4 @@
-#include "geom.h"
-#include <vector>
-#include<iostream>
-#include<string>
-#include <algorithm>
-#include<cmath>
-#include <set>
+#include "geom.hpp"
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
