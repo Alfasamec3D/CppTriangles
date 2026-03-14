@@ -1,5 +1,4 @@
-#ifndef GEOM_H
-#define GEOM_H
+#pragma once
 #include<iostream>
 #include <vector>
 #include <algorithm>
@@ -131,4 +130,3 @@ bool compare(const Point point, const Triangle triangle);
 bool compare(const Segment segment, const Triangle triangle);
 bool compare(const Triangle triangle1, const Triangle triangle2);
 void final();
-#endif
