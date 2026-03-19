@@ -1,113 +1,258 @@
 #pragma once
+
 #include <algorithm>
+#include <array>
 #include <cassert>
-#include <iomanip>
-#include <iostream>
-#include <vector>
+#include <stdexcept>
+#include<iostream>
+namespace Geometry {
+
+const double global_tolerance = 0.000001;
 
 template <typename T>
-bool eps_eq(T val1, T val2) {
-  T eps{0.000001};
-  return std::abs(val2 - val1) < eps;
+bool approxEql(const T& object1, const T& object2,
+               const double& tolerance = global_tolerance) {
+  return std::abs(object1 - object2) < tolerance;
 }
+
 template <typename T>
-int eps_sgn(T val);
+int approxSgn(const T& object, const double& tolerance = global_tolerance) {
+  if (approxEql(object, T{0}, tolerance))
+    return 0;
+  else if (object < 0)
+    return -1;
+  else
+    return 1;
+}
 
-class Point {
+template <typename T>
+class VPoint {
  private:
-  std::vector<double> m_coords;
+  std::array<T, 3> coordinates_;
 
  public:
-  Point() = default;
-  Point(const double x, const double y, const double z) : m_coords{x, y, z} {}
-  double x() const { return m_coords[0]; }
-  double y() const { return m_coords[1]; }
-  double z() const { return m_coords[2]; }
+  VPoint() = default;
+  VPoint(const std::array<T, 3>& coordinates) : coordinates_(coordinates) {};
+  std::array<T, 3> get_coordinates() const { return {coordinates_}; }
+  VPoint<T> operator+=(const VPoint<T>& vpoint) {
+    for (int i = 0; i < 3; ++i) {
+      coordinates_[i] += vpoint.coordinates_[i];
+    }
+    return *this;
+  }
+  template <typename U>
+  VPoint<T> operator*=(const U& number) {
+    for (int i = 0; i < 3; ++i) {
+      coordinates_[i] *= number;
+    }
+    return *this;
+  }
+
+  friend std::istream& operator>>(std::istream& is, VPoint<T>& vpoint) {
+    for (auto& coord : vpoint.coordinates_)
+      if (!(is >> coord))
+        throw std::runtime_error(
+            "Fatal: input was not valid for coordinate of point");
+    return is;
+  }
 };
 
-class Vector {
- private:
-  std::vector<double> m_coords;
+template <typename T>
+VPoint<T> operator+(const VPoint<T>& vpoint1, const VPoint<T>& vpoint2) {
+  VPoint<T> copy_vpoint1 = vpoint1;
+  return copy_vpoint1 += vpoint2;
+}
 
- public:
-  Vector() = default;
-  Vector(const double x, const double y, const double z) : m_coords{x, y, z} {};
-  Vector(const Point point1, const Point point2)
-      : m_coords{point2.x() - point1.x(), point2.y() - point1.y(),
-                 point2.z() - point1.z()} {};
-  Vector(const Point point) : m_coords{point.x(), point.y(), point.z()} {};
-  double x() const { return m_coords[0]; }
-  double y() const { return m_coords[1]; }
-  double z() const { return m_coords[2]; }
-};
+template <typename T, typename U>
+VPoint<T> operator*(const U& number, const VPoint<T>& vpoint) {
+  VPoint<T> copy_vpoint = vpoint;
+  return copy_vpoint *= number;
+}
 
-class Triangle;
-Vector vectprod(const Vector vector1, const Vector vector2);
+template <typename T, typename U>
+VPoint<T> operator*(const VPoint<T>& vpoint, const U& number) {
+  return number * vpoint;
+}
 
+template <typename T, typename U>
+VPoint<T> operator/(const VPoint<T>& vpoint, const U& number) {
+  return vpoint * (1 / number);
+}
+
+template <typename T>
+VPoint<T> operator-(const VPoint<T>& vpoint) {
+  return (-1) * vpoint;
+}
+
+template <typename T>
+VPoint<T> operator-(const VPoint<T>& vpoint1, const VPoint<T>& vpoint2) {
+  return vpoint1 + -vpoint2;
+}
+
+template <typename T>
+bool approxEql(const VPoint<T>& object1, const VPoint<T>& object2,
+               double tolerance = global_tolerance) {
+  VPoint<T> object_difference = object1 - object2;
+  for (const auto& coordinate : object_difference.get_coordinates())
+    if (approxSgn(coordinate, tolerance) != 0) return false;
+  return true;
+}
+
+template <typename T>
+T scalar_product(const VPoint<T>& point1, const VPoint<T>& point2) {
+  T result{};
+  for (int i = 0; i < 3; ++i)
+    result += point1.get_coordinates()[i] * point2.get_coordinates()[i];
+
+  return result;
+}
+
+template <typename T>
+VPoint<T> vector_product(const VPoint<T>& point1, const VPoint<T>& point2) {
+  std::array<T, 3> coordinates{};
+  for (int i = 0; i < 3; ++i)
+    coordinates[i] = point1.get_coordinates()[(i + 1) % 3] *
+                         point2.get_coordinates()[(i + 2) % 3] -
+                     point1.get_coordinates()[(i + 2) % 3] *
+                         point2.get_coordinates()[(i + 1) % 3];
+  return {coordinates};
+}
+
+template <typename T>
+T sqr_distance(const VPoint<T>& point1, const VPoint<T>& point2) {
+  const VPoint<T> difference_point = point1 - point2;
+
+  return scalar_product(difference_point, difference_point);
+}
+
+/*template <typename T>
+std::ostream& operator<<(std::ostream& os, const VPoint<T>& vpoint) {
+  os << '(';
+  for (const auto& coord : vpoint.get_coordinates()) os << coord << ' ';
+  os << ')';
+  return os;
+}
+*/
+template <typename T>
 class Segment {
  private:
-  std::vector<Point> m_edges;
+  std::array<VPoint<T>, 2> points_;
 
  public:
   Segment() = default;
-  Segment(const Point edge1, const Point edge2)
-      : m_edges{std::vector<Point>{edge1, edge2}} {}
-  Vector dir() const { return {m_edges[0], m_edges[1]}; }
-  friend bool operator==(const Segment segment1, const Segment segment2);
-  friend bool compare(const Point point, const Segment segment);
-  friend bool compare(const Segment segment1, const Segment segment2);
-  friend bool compare(const Segment segment, const Triangle triangle);
-  friend Point intsec(const Segment segment, const Triangle triangle);
+  Segment(const std::array<VPoint<T>, 2>& points) : points_(points) {};
+
+  std::array<VPoint<T>, 2> get_points() const { return points_; }
+
+  VPoint<T> direction() const { return points_[1] - points_[0]; }
 };
 
+template <typename T>
+bool approxEql(const Segment<T>& object1, const Segment<T>& object2,
+               double tolerance = global_tolerance) {
+  return approxEql(object1.get_points()[0], object2.get_points()[0],
+                   tolerance) &&
+             approxEql(object1.get_points()[1], object2.get_points()[1],
+                       tolerance) ||
+         approxEql(object1.get_points()[0], object2.get_points()[1],
+                   tolerance) &&
+             approxEql(object1.get_points()[1], object2.get_points()[0],
+                       tolerance);
+}
+
+enum GeometryClass { VPOINT, SEGMENT, TRIANGLE };
+template <typename T>
 class Triangle {
  private:
-  std::vector<Point> m_apexes;
+  std::array<VPoint<T>, 3> points_;
 
  public:
-  Triangle() {}
-  Triangle(const Point apex1, const Point apex2, const Point apex3)
-      : m_apexes{std::vector<Point>{apex1, apex2, apex3}} {}
-  Triangle(const double x1, const double y1, const double z1, const double x2,
-           const double y2, const double z2, const double x3, const double y3,
-           const double z3)
-      : m_apexes{std::vector<Point>{Point{x1, y1, z1}, Point{x2, y2, z2},
-                                    Point{x3, y3, z3}}} {}
+  Triangle() = default;
+  Triangle(const std::array<VPoint<T>, 3>& points) : points_(points) {};
 
-  Vector norm() const {
-    return vectprod({m_apexes[0], m_apexes[1]}, {m_apexes[1], m_apexes[2]});
+  std::array<VPoint<T>, 3> get_points() const { return points_; }
+
+  VPoint<T> normal() const {
+    return vector_product(points_[1] - points_[0], points_[2] - points_[1]);
   }
-  int actual() const;
-  Segment segm() const;
-  Point minCorner() const;
-  Point maxCorner() const;
-  friend bool compare(const Triangle triangle1, const Triangle triangle2);
-  friend bool compare(const Segment segment, const Triangle triangle);
-  friend bool compare(const Point point, const Triangle triangle);
-  friend Point intsec(const Segment segment, const Triangle triangle);
+
+  GeometryClass actual_class(const double& tolerance = global_tolerance) const {
+    if (approxEql(points_[0], points_[1], tolerance) &&
+        approxEql(points_[1], points_[2], tolerance))
+      return VPOINT;
+    if (approxEql(normal(), {{0, 0, 0}})) return SEGMENT;
+    return TRIANGLE;
+  }
+
+  Segment<T> segment() const {
+    assert(actual_class() != TRIANGLE);
+    int k;
+    for (int i = 0; i < 3; ++i) {
+      if ((sqr_distance(points_[i], points_[(i + 1) % 3]) >=
+           sqr_distance(points_[(i + 1) % 3], points_[(i + 2) % 3])) &&
+          (sqr_distance(points_[i], points_[(i + 1) % 3]) >=
+           sqr_distance(points_[(i + 2) % 3], points_[i]))) {
+        k = i;
+        break;
+      }
+    }
+    return {{points_[k], points_[(k + 1) % 3]}};
+  }
+
+  friend std::istream& operator>>(std::istream& is, Triangle<T>& triangle) {
+    for (auto& point : triangle.points_) is >> point;
+    return is;
+  }
+
+  VPoint<T> minCorner() const {
+    std::array<T, 3> coordinates;
+    for (int i = 0; i < 3; ++i)
+      coordinates[i] = std::min({points_[0].get_coordinates()[i],
+                                 points_[1].get_coordinates()[i],
+                                 points_[2].get_coordinates()[i]});
+    return {coordinates};
+  }
+  VPoint<T> maxCorner() const {
+    std::array<T, 3> coordinates;
+    for (int i = 0; i < 3; ++i)
+      coordinates[i] = std::max({points_[0].get_coordinates()[i],
+                                 points_[1].get_coordinates()[i],
+                                 points_[2].get_coordinates()[i]});
+    return {coordinates};
+  }
 };
 
+template <typename T>
+VPoint<T> intersection(const Segment<T>& segment, const Triangle<T>& triangle);
+
+template <typename T>
+bool intersect(const VPoint<T>& vpoint, const Segment<T>& segment,
+               const double& tolerance = global_tolerance);
+
+template <typename T>
+bool intersect(const Segment<T>& segment1, const Segment<T>& segment2,
+               const double& tolerance = global_tolerance);
+
+template <typename T>
+bool intersect(const VPoint<T>& vpoint, const Triangle<T>& triangle,
+               const double& tolerance = global_tolerance);
+
+template <typename T>
+bool intersect(const Segment<T>& segment, const Triangle<T>& triangle,
+               const double& tolerance = global_tolerance);
+
+template <typename T>
+bool subintersect(const Triangle<T>& triangle1, const Triangle<T>& triangle2,
+                  const double& tolerance = global_tolerance);
+
+template <typename T>
+bool intersect(const Triangle<T>& triangle1, const Triangle<T>& triangle2,
+               const double& tolerance = global_tolerance);
+template <typename T>
 struct AABB {
-  Point minCorner, maxCorner;
+  VPoint<T> minCorner, maxCorner;
 };
 
-double scalprod(const Vector vector1, const Vector vector2);
-double sqrdist(const Point point1, const Point point2);
-bool operator==(const Point point1, const Point point2);
-bool operator==(const Segment segment1, const Segment segment2);
-Point operator*(const Point point, const double num);
-Point operator*(const double num, const Point point);
-Vector operator*(const double num, const Vector vector);
-Vector operator*(const Vector vector, const double num);
-bool operator==(const Vector vector1, const Vector vector2);
-Vector operator+(const Vector vector1, const Vector vector2);
-
-Point intsec(const Segment segment, const Triangle triangle);
-std::istream& operator>>(std::istream& in, Triangle& triangle);
-
-bool compare(const Point point, const Segment segment);
-bool compare(const Segment segment1, const Segment segment2);
-bool compare(const Point point, const Triangle triangle);
-bool compare(const Segment segment, const Triangle triangle);
-bool compare(const Triangle triangle1, const Triangle triangle2);
 void final();
+
+}  // namespace Geometry

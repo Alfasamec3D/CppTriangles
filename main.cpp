@@ -1,5 +1,5 @@
 #include "geom.hpp"
 int main() {
-  final();
+  Geometry::final();
   return 1;
 }
