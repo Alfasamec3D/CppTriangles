@@ -70,9 +70,8 @@ void final() {
     }
   }
   for (const auto& index : intersectingTriangles) {
-    std::cout << index << ' ';
+    std::cout << index << std::endl;
   }
-  std::cout << std::endl;
 }
 
 }  // namespace Geometry
